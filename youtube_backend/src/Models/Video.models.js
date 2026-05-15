@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 const VideoSchema = new mongoose.Schema(
     {
         videofile : {
-            type: String,
+            type: String, // cloudnary url
             required: true,
         },
         title:{
@@ -27,7 +27,7 @@ const VideoSchema = new mongoose.Schema(
             default: true,
         },
         owner:{
-            type: mongoose.Schema.Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
         },

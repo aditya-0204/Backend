@@ -11,7 +11,7 @@ const asynchandler = (requesthandler)=>{
 
 // try catch
 //  const asynchandler = (fn)=> async (req,res,next)=>{   // we are passing a function into another function 
-//     try{
+//     try{ 
 //         await fn(req,res,next)
 //     }
 //     catch(error){
