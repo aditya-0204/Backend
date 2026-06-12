@@ -7,7 +7,7 @@ class APIError extends Error{
     ){
         super(message)
         this.statusCode = statusCode
-        this.Message = Message;
+        this.Message = message;
         this.errors = errors;
         this.data = null
         this.success = false;
