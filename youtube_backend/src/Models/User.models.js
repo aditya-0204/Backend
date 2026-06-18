@@ -53,12 +53,12 @@ const UserSchema = new mongoose.Schema(
 )
 
 // User password encyption 
-UserSchema.pre("save",async function (next){
+UserSchema.pre("save",async function (){
     if(!this.isModified("password")){ // prebuild isModified to check whether it is modified or not 
      return next();
     }
     this.password = await bcrypt.hash(this.password,12);
-    next();
+    // next();
 
 })
 
