@@ -12,7 +12,7 @@ const generateAccessAndRefreshTokens = async(userId)=> {
         const refreshToken = user.generateRefreshToken();
 
         user.refreshToken = refreshToken // adding value to the object
-        await user.save({validBeforeSave:false});
+        await user.save({validateBeforeSave:false});
         return {refreshToken,accessToken};
 
     }
@@ -84,11 +84,12 @@ const registerUser = asynchandler( async(req , res)=>{
         throw new APIError(500,"Something went Wrong while registering the user");
     }
     return res.status(201).json({
-    success: true,
-    message: "User registered successfully",
-    data: createdUser
-});
-
+        success: true,
+        message: "User registered successfully",
+        data: createdUser
+    });
+})
+    
 
 // login user 
 
@@ -149,6 +150,27 @@ const loginUser = asynchandler(async (req,res)=>{
 })
 
 
-}  )
 
-export default {registerUser,loginUser};
+//logout 
+
+const logoutUser = asynchandler(async(req,res)=>{
+     await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshToken: undefined
+            }
+        }
+     )
+     const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(new APiResponse(200),"User logout successfully.")
+})
+
+export {loginUser,registerUser,logoutUser};
