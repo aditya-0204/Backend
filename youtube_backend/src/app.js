@@ -17,7 +17,7 @@ app.use(cookieparser()) // for cookies to keep in the browser securely only read
 
 // routes import 
 import userrouter from "./routes/user.routes.js"
-import registerUser from "./Controllers/user.controller.js"
+import {registerUser} from "./Controllers/user.controller.js"
 
 
 //routes declaration

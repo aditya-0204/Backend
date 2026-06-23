@@ -2,6 +2,7 @@ import { User } from "../Models/User.models.js";
 import asynchandler from "../utils/asynchandler.js";
 import APIError from "../utils/Apierror.js";
 import uploadonCloudinary from "../utils/Cloudinary.js";
+import APIresponse from "../utils/Apiresponse.js";
 
 //  generation of access and refresh token for existed user 
 
@@ -16,7 +17,8 @@ const generateAccessAndRefreshTokens = async(userId)=> {
         return {refreshToken,accessToken};
 
     }
-    catch{
+    catch(error){
+        console.log("Error: ",error )
         throw new APIError(500,"Something went wrong while generating access and refresh token")
     }
 }
@@ -32,17 +34,18 @@ const registerUser = asynchandler( async(req , res)=>{
     // remove password and refresh token  fileds from response
     // check for user creation
     // return result
+    console.log("BOdy",req.body);
+    console.log("Files",req.files)
 
-
-    const {fullName,email,username:userName,password} = req.body
+    const {fullName,email,username:username,password} = req.body
     console.log("Fullname: ",fullName);
-    if([fullName,email,userName,password].some((field)=> field?.trim()==="")){
+    if([fullName,email,username,password].some((field)=> field?.trim()==="")){
         throw new APIError(400,"All fields are mandatory");
     }
     // checking user already exist or not
 
     const existedUser = await User.findOne({
-        $or:[{ userName },{ email }]
+        $or:[{ username },{ email }]
     })
     if(existedUser){
         throw new APIError(409,"User with Email Id or Username already exist")
@@ -74,7 +77,7 @@ const registerUser = asynchandler( async(req , res)=>{
         coverimage: cover?.url||"",
         email,
         password,
-        username:userName.toLowerCase()
+        username:username.toLowerCase()
     })
 
     const createdUser = await User.findById(NewUser._id).select(
@@ -102,14 +105,16 @@ const loginUser = asynchandler(async (req,res)=>{
     //send cookie
     // send successful message
 
+    console.log("Body",req.body);
+    
 
-    const {email,userName,password} = req.body
-    if(!userName || !email){
+    const {email,username,password} = req.body
+    if(!username && !email){
         throw new APIError(400,"username or email is required")
     }
     // checking user on the basis of username or email 
     const user = await User.findOne({
-        $or:[{userName},{email}]
+        $or:[{username},{email}]
     })
     //checking whether we get the user or not
     if(!user){ 
@@ -139,7 +144,7 @@ const loginUser = asynchandler(async (req,res)=>{
     .cookie("accessToken",accessToken,options)
     .cookie("refreshToken",refreshToken,options)
     .json(
-        new APiResponse(
+        new APIresponse(
             200,
             {
                 user : loggedInUser,accessToken,refreshToken
@@ -170,7 +175,7 @@ const logoutUser = asynchandler(async(req,res)=>{
     .status(200)
     .clearCookie("accessToken",options)
     .clearCookie("refreshToken",options)
-    .json(new APiResponse(200),"User logout successfully.")
+    .json(new APIresponse(200),"User logout successfully.")
 })
 
 export {loginUser,registerUser,logoutUser};

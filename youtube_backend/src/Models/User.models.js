@@ -53,9 +53,9 @@ const UserSchema = new mongoose.Schema(
 )
 
 // User password encyption 
-UserSchema.pre("save",async function (){
+UserSchema.pre("save",async function (next){
     if(!this.isModified("password")){ // prebuild isModified to check whether it is modified or not 
-     return next();
+     return ; // in modern mongoose the next is not needed 
     }
     this.password = await bcrypt.hash(this.password,12);
     // next();
