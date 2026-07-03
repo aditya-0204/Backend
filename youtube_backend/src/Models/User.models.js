@@ -61,7 +61,7 @@ UserSchema.pre("save",async function (next){
     // next();
 
 })
-
+ 
 // defining method to check whether the entered password to login is correct or not
 
 UserSchema.methods.ispasswordcorrect = async function(password){ // when the request is waiting for the response
