@@ -5,6 +5,7 @@ import uploadonCloudinary from "../utils/Cloudinary.js";
 import APIresponse from "../utils/Apiresponse.js";
 import jwt from "jsonwebtoken";
 import { channel, subscribe } from "diagnostics_channel";
+import mongoose from "mongoose";
 
 //  generation of access and refresh token for existed user 
 
@@ -393,4 +394,62 @@ const getUserChannelprofile = asynchandler(async (req, res) => {
         new APIresponse(200,channel[0],"User channel fetched successfully")
     )
 })
-export { loginUser, registerUser, logoutUser, RefreshtheaccessToken, changecurrentPassword, getcurrentUser, updateAccountDetails, updateAvatar, updateUserCoverImage };
+ // note: -
+//  match -> a guard that asks who is you ? are you aditya
+//  lookup -> it looks for aditya's document like watch history watch history only contains the video id not the exact name of the video
+// from -> go to the video room
+// localField -> which field of the current user should be read
+// foreignField -> compare with the field , if equal bring that
+// as ->  after finding that where should I keep that
+// project  -> the fields you want to know(specific)
+
+const getwatchhistory = asynchandler(async(req,res)=>{
+    const user  = await User.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.user._id) // mongoose will not work , aggregation code will directly go
+            }
+        },
+        {
+            $lookup:{
+            from:"videos",
+            localField:"watchHistory",
+            foreignField:"_id",
+            as:"WatchHistory",
+            pipeline:[
+                {
+                    $lookup:{
+                        from:"users",
+                        localField:"owner",
+                        foreignField:"_id",
+                        as:"owner",
+                        pipeline:[
+                            {
+                                $project:{
+                                    fullName:1,
+                                    username:1,
+                                    avatar:1,
+                                }
+                            },
+                            {
+                                $addFields:{
+                                    owner:{
+                                        $first:"$owner"// give the owner name as first field
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+
+        }}
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new APIresponse(200,user[0].watchHistory,"watch history fetched successfully")
+    )
+})
+export { loginUser, registerUser, logoutUser, RefreshtheaccessToken, changecurrentPassword, getcurrentUser, updateAccountDetails, updateAvatar, updateUserCoverImage,getUserChannelprofile, getwatchhistory };
