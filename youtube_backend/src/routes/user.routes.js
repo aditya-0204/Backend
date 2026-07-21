@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { changecurrentPassword, getcurrentUser, getUserChannelprofile, getwatchhistory, loginUser, RefreshtheaccessToken, registerUser, updateAvatar, updateUserCoverImage } from "../Controllers/user.controller.js";
+import { changecurrentPassword, getcurrentUser, getUserChannelprofile, getwatchhistory, loginUser, RefreshtheaccessToken, registerUser, updateAccountDetails, updateAvatar, updateUserCoverImage } from "../Controllers/user.controller.js";
 import { upload } from "../Middlewares/Multer.middleware.js";
 import { verifyJWT } from "../Middlewares/auth.middleware.js";
 import { logoutUser } from "../Controllers/user.controller.js";
@@ -20,7 +20,7 @@ userrouter.route("/logout").post(verifyJWT, logoutUser)
 userrouter.route("/refresh-Token").post(RefreshtheaccessToken)
 userrouter.route("/change_password").post(verifyJWT, changecurrentPassword)
 userrouter.route("/current-user").get(verifyJWT, getcurrentUser)
-userrouter.route("/update-account-details").patch(verifyJWT)/// patch because if we use get it will update all the fields 
+userrouter.route("/update-account-details").patch(verifyJWT,updateAccountDetails)/// patch because if we use get it will update all the fields 
 userrouter.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateAvatar)
 userrouter.route("/coverImage").patch(verifyJWT, upload.single("coverimage"), updateUserCoverImage)
 

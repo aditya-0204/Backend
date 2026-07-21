@@ -1,6 +1,7 @@
 import express from "express"
 import cors from "cors"
 import cookieparser from "cookie-parser"
+import APIError from "./utils/Apierror.js"
 
 
 const app = express()
@@ -25,5 +26,16 @@ import {registerUser} from "./Controllers/user.controller.js"
 // so we have to use middleware and to use middleware we have to use app.use
  
 app.use("/api/v1/users",userrouter)
+
+app.use((err, req, res, next) => {
+    const statusCode = err instanceof APIError ? err.statusCode : 500
+    const message = err.message || "Internal Server Error"
+
+    res.status(statusCode).json({
+        success: false,
+        message,
+        errors: err.errors || [],
+    })
+})
 
 export default app;

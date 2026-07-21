@@ -4,7 +4,6 @@ import APIError from "../utils/Apierror.js";
 import uploadonCloudinary from "../utils/Cloudinary.js";
 import APIresponse from "../utils/Apiresponse.js";
 import jwt from "jsonwebtoken";
-import { channel, subscribe } from "diagnostics_channel";
 import mongoose from "mongoose";
 
 //  generation of access and refresh token for existed user 
@@ -25,6 +24,11 @@ const generateAccessAndRefreshTokens = async (userId) => {
         throw new APIError(500, "Something went wrong while generating access and refresh token")
     }
 }
+
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production"
+};
 
 const registerUser = asynchandler(async (req, res) => {
     // step to register the user
@@ -137,15 +141,10 @@ const loginUser = asynchandler(async (req, res) => {
 
     // sending the information to the user 
 
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-
     return res
         .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
         .json(
             new APIresponse(
                 200,
@@ -165,20 +164,16 @@ const logoutUser = asynchandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1
             }
         }
     )
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
     return res
         .status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
-        .json(new APIresponse(200), "User logout successfully.")
+        .clearCookie("accessToken", cookieOptions)
+        .clearCookie("refreshToken", cookieOptions)
+        .json(new APIresponse(200, {}, "User logout successfully."))
 })
 
 
@@ -200,19 +195,15 @@ const RefreshtheaccessToken = asynchandler(async (req, res) => {
         if (incomingrefreshToken != user?.refreshToken) {
             throw new APIError(401, "refresh Token is invalid or expired");
         }
-        const options = {
-            httpOnly: true,
-            secure: true
-        }
-        const { accessToken, NewRefreshToken } = await generateAccessAndRefreshTokens(user._id)
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
         return res
             .status(200)
-            .cookie("accessToken", accessToken, Token)
-            .cookie("refreshToken", NewRefreshToken, Token)
+            .cookie("accessToken", accessToken, cookieOptions)
+            .cookie("refreshToken", newRefreshToken, cookieOptions)
             .json(
                 new APIresponse(
                     200,
-                    { accessToken, refreshToken: NewRefreshToken },
+                    { accessToken, refreshToken: newRefreshToken },
                     "Access Token refreshed"
                 )
             )
@@ -242,8 +233,9 @@ const changecurrentPassword = asynchandler(async (req, res) => {
 
 
 const getcurrentUser = asynchandler(async (req, res) => {
-    return res.status(200)
-        .json(200, req.user, "Current User feteched successfully")
+    return res
+        .status(200)
+        .json(new APIresponse(200, req.user, "Current User fetched successfully"))
 })
 
 const updateAccountDetails = asynchandler(async (req, res) => {
@@ -253,11 +245,11 @@ const updateAccountDetails = asynchandler(async (req, res) => {
         throw new APIError(400, "All the fields are required");
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
-                fullName: fullName,
+                Fullname: fullName,
                 email: email
             }
         },
@@ -327,11 +319,11 @@ const updateUserCoverImage = asynchandler(async (req, res) => {
 })
 
 const getUserChannelprofile = asynchandler(async (req, res) => {
-    const username = req.params
-    if (!username?.trim) {
+    const { username } = req.params
+    if (!username?.trim()) {
         throw new APIError(400, "User name is missing");
     }
-    const Channel = User.aggregate([
+    const channel = await User.aggregate([
         {
             $match: {
                 username: username?.toLowerCase()
@@ -347,9 +339,9 @@ const getUserChannelprofile = asynchandler(async (req, res) => {
         },
         {
             $lookup: {
-                from: "subsriptions",
+                from: "subscriptions",
                 localField: "_id",
-                foreignField: "Subscriber",
+                foreignField: "subscriber",
                 as: "subscribedTo"
             }
         },
@@ -363,36 +355,37 @@ const getUserChannelprofile = asynchandler(async (req, res) => {
                 },
                 issubscribed: {
                     $cond: {
-                        if:{
-                            $in:[req.user?._id,"subscribers.subscriber"]
+                        if: {
+                            $in: [req.user?._id, "$subscribers.subscriber"]
                         },
-                        then:true,
+                        then: true,
                         else: false
                     }
                 }
             }
         },
         {
-            $project:{
-                fullName :1,
-                username:1,
-                channelsSubsribedTo :1,
-                subscriberscount:1,
-                avatar:1,
-                email:1,
-                coverimage:1,
+            $project: {
+                Fullname: 1,
+                username: 1,
+                channelsSubsribedTo: 1,
+                subscriberscount: 1,
+                issubscribed: 1,
+                avatar: 1,
+                email: 1,
+                coverimage: 1,
             }
         }
     ])
-    if(!channel?.length){
-        throw new APIError(404,"channel does not exist")
+    if (!channel?.length) {
+        throw new APIError(404, "channel does not exist")
     }
 
     return res
-    .status(200)
-    .json(
-        new APIresponse(200,channel[0],"User channel fetched successfully")
-    )
+        .status(200)
+        .json(
+            new APIresponse(200, channel[0], "User channel fetched successfully")
+        )
 })
  // note: -
 //  match -> a guard that asks who is you ? are you aditya
