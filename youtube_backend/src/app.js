@@ -18,7 +18,7 @@ app.use(cookieparser()) // for cookies to keep in the browser securely only read
 
 // routes import 
 import userrouter from "./routes/user.routes.js"
-import {registerUser} from "./Controllers/user.controller.js"
+import likerouter from "./routes/like.routes.js"
 
 
 //routes declaration
@@ -26,6 +26,7 @@ import {registerUser} from "./Controllers/user.controller.js"
 // so we have to use middleware and to use middleware we have to use app.use
  
 app.use("/api/v1/users",userrouter)
+app.use("/api/v1/likes",likerouter)
 
 app.use((err, req, res, next) => {
     const statusCode = err instanceof APIError ? err.statusCode : 500
